@@ -1,0 +1,420 @@
+//teamleader
+// record_id = "271883000001533044";
+variableID = "271883000001594055";
+crm_variable = invokeurl
+[
+	url :"https://www.zohoapis.eu/crm/v2/settings/variables/" + variableID
+	type :GET
+	connection:"crm_all"
+];
+// info crm_variable;
+if(!crm_variable.isNull())
+{
+	var_details = crm_variable.getJSON("variables");
+	for each  var in var_details
+	{
+		var_ID = var.get("id");
+		if(var_ID != Null)
+		{
+			if(var_ID == "271883000001594055")
+			{
+				get_refreshtoken_crmvar = var.get("value");
+			}
+		}
+	}
+}
+info get_refreshtoken_crmvar;
+clientIDs = "ea6edf188428f6a1f2e34f1959323c61";
+client_secrets = "0aabff2c5553a0b5db33b707ca89800f";
+mp1 = Map();
+mp1.put("client_id",clientIDs);
+mp1.put("client_secret",client_secrets);
+mp1.put("refresh_token",get_refreshtoken_crmvar);
+mp1.put("grant_type","refresh_token");
+response = invokeurl
+[
+	url :"https://app.teamleader.eu/oauth2/access_token"
+	type :POST
+	parameters:mp1
+];
+// info response;
+accesstkn = response.getJSON("access_token");
+crmvarheader = Map();
+oauth = "Bearer" + " " + accesstkn;
+crmvarheader.put("Authorization",oauth);
+crmvarheader.put("Content-Type","application/json");
+info crmvarheader;
+refresh_token = response.getJSON("refresh_token");
+vars = Map();
+vars.put("value",refresh_token);
+vars.put("id",variableID);
+// vars.put("description","updated refresh token");
+varsList = List();
+varsList.add(vars);
+finalvarMap = Map();
+final_list = varsList.toJsonList();
+finalvarMap.put("variables",varsList);
+// info finalvarMap;
+updatevariable = invokeurl
+[
+	url :"https://www.zohoapis.eu/crm/v2/settings/variables/" + variableID
+	type :PUT
+	parameters:finalvarMap.toString()
+	connection:"crm_all"
+];
+// info updatevariable;
+///////////////////////////////main-process/////////////////////////////////
+page_size = Map();
+page_size.put("number",50);
+page_size.put("size",30);
+data = zoho.crm.getRecordById("Quotes",quoteID);
+// info data;
+Subjects = data.getJSON("Subject");
+// currency_symbol = data.getJSON("$currency_symbol");
+// if(currency_symbol.containsIgnoreCase("EUR"))
+// {
+// 	currency = "EUR";
+// }
+// if(currency_symbol.containsIgnoreCase("ILS"))
+// {
+// 	currency = "ILS";
+// }
+// if(currency_symbol.containsIgnoreCase("USD"))
+// {
+// 	currency = "USD";
+// }
+currency = "EUR";
+// info crmvarheader;
+contact_name = data.getJSON("Contact_Name");
+if(!contact_name.isNull())
+{
+	contact_ID = contact_name.getJSON("id");
+	contact_details = zoho.crm.getRecordById("Contacts",contact_ID);
+	// 	info contact_details;
+	email = contact_details.getJSON("Email");
+	contact_filter = Map();
+	contact_filter.put("type","primary");
+	contact_filter.put("email",email);
+	filter = Map();
+	filter.put("filter",contact_filter);
+	Teamleader_Contact_ID = contact_details.getJSON("Teamleader_Contact_ID");
+	if(Teamleader_Contact_ID.isNull())
+	{
+		info "teamleader_Check";
+		// 				contacts = invokeurl
+		// 				[
+		// 					url :"https://api.teamleader.eu/contacts.list"
+		// 					type :GET
+		// 					headers:crmvarheader
+		// 				];
+		// 				contacts_team = contacts.getJSON("data");
+		// 				for each  record in contacts_team
+		// 				{
+		// 					team_email = record.getJSON("emails").getJSON("email");
+		// 					if(team_email == email)
+		// 					{
+		// 						Teamleader_Contact_ID = record.getJSON("id");
+		// 					}
+		// 				}
+		res = contact_details;
+		Email = res.getJSON("Email");
+		First_Name = res.getJSON("First_Name");
+		Last_Name = res.getJSON("Last_Name");
+		Phone = res.getJSON("Phone");
+		Website = res.getJSON("Website");
+		Mailing_Zip = res.getJSON("Mailing_Zip");
+		Mailing_City = res.getJSON("Mailing_City");
+		Mailing_Country = res.getJSON("Mailing_Country");
+		Mailing_Street = res.getJSON("Mailing_Street");
+		Mailing_State = res.getJSON("Mailing_State");
+		mail = Map();
+		mail.put("type","primary");
+		mail.put("email",Email);
+		mail.put("email",Email);
+		email = List();
+		email.add(mail);
+		// info email;
+		telephone = Map();
+		telephone.put("type","mobile");
+		telephone.put("number",Phone);
+		Telephn = List();
+		Telephn.add(telephone);
+		// info Telephn;
+		tags = List();
+		tags.add("client");
+		Primary_address = Map();
+		Primary_address.put("line_1",Mailing_Street);
+		Primary_address.put("postal_code",Mailing_Zip);
+		Primary_address.put("city",Mailing_City);
+		Primary_address.put("country","IL");
+		Address = Map();
+		Address.put("type","primary");
+		Address.put("address",Primary_address);
+		final_map = Map();
+		final_map.put("first_name",First_Name);
+		final_map.put("last_name",Last_Name);
+		final_map.put("telephones",Telephn);
+		final_map.put("emails",email);
+		final_map.put("website",Website);
+		addres = List();
+		addres.add(Address);
+		final_map.put("addresses",addres);
+		dob = res.getJSON("Date_of_Birth");
+		final_map.put("birthdate",dob);
+		info final_map;
+		add_contact = invokeurl
+		[
+			url :"https://api.teamleader.eu/contacts.add"
+			type :POST
+			parameters:final_map.toString()
+			headers:crmvarheader
+		];
+		info add_contact;
+		Teamleader_Contact_ID = add_contact.getJSON("data").getJSON("id");
+		map_data = Map();
+		url_link = "https://app.teamleader.eu/contact_detail.php?id=" + Teamleader_Contact_ID;
+		map_data.put("Teamleader_Contact_ID",Teamleader_Contact_ID);
+		map_data.put("Teamleader_Contact_Link",url_link);
+		update_contact = zoho.crm.updateRecord("Contacts",contact_ID,map_data);
+		info update_contact;
+	}
+}
+/////////////////////////////////////////////////
+Account_Name = data.getJSON("Account_Name");
+if(!Account_Name.isNull())
+{
+	account_name = Account_Name.getJSON("name");
+	accountID = Account_Name.getJSON("id");
+	account_details = zoho.crm.getRecordById("Accounts",accountID);
+	// 	info account_details;
+	teamleader_account_ID = account_details.getJSON("Teamleader_Account_ID");
+	if(teamleader_account_ID.isNull())
+	{
+		// 			companies = invokeurl
+		// 			[
+		// 				url :"https://api.teamleader.eu/companies.list"
+		// 				type :GET
+		// 				headers:crmvarheader
+		// 			];
+		// 			info "Companies";
+		// 			// 	info companies;
+		// 			company_data = companies.getJSON("data");
+		// 			for each  record in company_data
+		// 			{
+		// 				company_name = record.getJSON("name");
+		// 				if(company_name == account_name)
+		// 				{
+		// 					teamleader_account_ID = record.getJSON("id");
+		// 				}
+		// 			}
+		// 	info teamleader_account_ID;
+		// 	//create the company in teamleader
+		// 	if(teamleader_account_ID == null)
+		// 	{
+		mp = Map();
+		contact_vat_number = contact_details.getJSON("vat_number");
+		Website = account_details.getJSON("Website");
+		if(Website.isNull())
+		{
+			mp.put("website",Website);
+		}
+		else
+		{
+			Website = contact_details.getJSON("Website");
+			mp.put("website",Website);
+		}
+		emails = contact_details.getJSON("Email");
+		Account_Number = account_details.getJSON("Account_Number");
+		if(!Account_Number.isNull())
+		{
+			mp.put("vat_number",Account_Number);
+		}
+		else
+		{
+			mp.put("vat_number",contact_vat_number);
+		}
+		Account_Name = account_details.getJSON("Account_Name");
+		mp.put("name",Account_Name);
+		account_phone = account_details.getJSON("Phone");
+		if(!account_phone.isNull())
+		{
+			Phone = account_phone;
+		}
+		else
+		{
+			Phone = contact_details.getJSON("Phone");
+		}
+		mail = Map();
+		mail.put("type","primary");
+		mail.put("email",emails);
+		// mail.put("email",Email);
+		email = List();
+		email.add(mail);
+		mp.put("emails",email);
+		telephone = Map();
+		telephone.put("type","mobile");
+		telephone.put("number",Phone);
+		Telephn = List();
+		Telephn.add(telephone);
+		add_company = invokeurl
+		[
+			url :"https://api.teamleader.eu/companies.add"
+			type :POST
+			parameters:mp.toString()
+			headers:crmvarheader
+		];
+		info add_company;
+		teamleader_account_ID = add_company.getJSON("data").getJSON("id");
+		url_link = "https://app.teamleader.eu/company_detail.php?id=" + teamleader_account_ID;
+		//update the account as well
+		account_map = Map();
+		account_map.put("Teamleader_Account_ID",teamleader_account_ID);
+		account_map.put("Teamleader_Account_Link",url_link);
+		update_contact = zoho.crm.updateRecord("Accounts",accountID,account_map);
+		link = Map();
+		link.put("company_id",teamleader_account_ID);
+		link.put("id",Teamleader_Contact_ID);
+		link_company = invokeurl
+		[
+			url :"https://api.teamleader.eu/contacts.linkToCompany"
+			type :POST
+			parameters:link.toString()
+			headers:crmvarheader
+		];
+		info "link company";
+		info link_company;
+	}
+	info teamleader_account_ID;
+}
+Product_Details = data.getJSON("Product_Details");
+li = List();
+final_group_list = List();
+for each  product in Product_Details
+{
+	li5 = List();
+	product_name = product.getJSON("product").getJSON("name");
+	info product_name;
+	product_description = product.getJSON("product_description");
+	Product_Code = product.getJSON("Product_Code");
+	//get all products from teamleader
+	product_list = invokeurl
+	[
+		url :"https://api.teamleader.eu/products.list"
+		type :GET
+		headers:crmvarheader
+	];
+	// 	info product_list;
+	teamleader_products = product_list.getJSON("data");
+	for each  prod in teamleader_products
+	{
+		map_data = Map();
+		prod_name = prod.getJSON("name");
+		if(prod_name == product_name)
+		{
+			info prod_name;
+			product_id = prod.getJSON("id");
+			info product_id;
+		}
+	}
+	if(product_id.isNull())
+	{
+		//create the product
+		info "500";
+		mp = Map();
+		mp.put("name",product_name);
+		if(!Product_Code.isNull())
+		{
+			mp.put("code",Product_Code);
+		}
+		mp.put("description",product_description);
+		mp.put("currency",currency);
+		add_product = invokeurl
+		[
+			url :"https://api.teamleader.eu/products.add"
+			type :POST
+			parameters:mp
+			headers:crmvarheader
+		];
+		info "add_product";
+		info add_product;
+		product_id = add_product.getJSON("data").getJSON("id");
+	}
+	// 	info crmvarheader;
+	quantity = product.getJSON("quantity");
+	Discount = product.getJSON("Discount");
+	Tax = product.getJSON("Tax");
+	list_price = product.getJSON("list_price");
+	unit_price = product.getJSON("unit_price");
+	product_description = product.getJSON("product_description");
+	map_data.put("quantity",quantity);
+	map_data.put("description",product_name);
+	map_data.put("tax_rate_id","a22c584e-9105-0901-9440-e46f6207c382");
+	unit_price = Map();
+	unit_price.put("amount",list_price);
+	unit_price.put("currency",currency);
+	unit_price.put("tax","excluding");
+	map_data.put("unit_price",unit_price);
+	li5.add(map_data);
+	discounts = Map();
+	discounts.put("value",Discount);
+	discounts.put("type","number");
+	group_map = Map();
+	group_map.put("product_id",product_id);
+	group_map.put("discount",discounts);
+	group_map.put("line_items",li5);
+}
+final_group_list.add(group_map);
+info final_group_list;
+department = Map();
+department.put("type","department");
+department.put("id","1de05bf2-038e-0cd9-9558-33f169e2ad13");
+customer = Map();
+customer.put("id",teamleader_account_ID);
+customer.put("type","company");
+custom = Map();
+custom.put("customer",customer);
+custom.put("name",Subjects);
+payment_trm = Map();
+payment_trm.put("type","cash");
+final_map = Map();
+final_map.put("invoicee",custom);
+final_map.put("payment_term",{"type":"cash"});
+final_map.put("department_id","1de05bf2-038e-0cd9-9558-33f169e2ad13");
+final_map.put("grouped_lines",final_group_list);
+// info "500";
+// info final_map;
+info teamleader_account_ID;
+info "dfsaf";
+add_invoice = invokeurl
+[
+	url :"https://api.teamleader.eu/invoices.draft"
+	type :POST
+	parameters:final_map.toString()
+	headers:crmvarheader
+];
+info "get_invoice";
+info add_invoice;
+quote_teamleaderID = add_invoice.getJSON("data").getJSON("id");
+quote_url = "https://app.teamleader.eu/invoice_detail.php?id=" + quote_teamleaderID;
+//update the quote link
+map_quote = Map();
+map_quote.put("Teamleader_Invoice_URL",quote_url);
+update_quote = zoho.crm.updateRecord("Quotes",quoteID,map_quote);
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// get_invoice = invokeurl
+// [
+// 	url :"https://api.teamleader.eu/invoices.list"
+// 	type :POST
+// 	headers:crmvarheader
+// ];
+// info "get_invoice";
+// info get_invoice;
+// company = invokeurl
+// [
+// 	url :"https://api.teamleader.eu/companies.list"
+// 	type :GET
+// 	headers:crmvarheader
+// ];
+// info company;
+// {"Authorization":"Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImp0aSI6IjYzOWFlZTIyYmU0MTc1NmFiMTBmYjEzN2JkZTIwYmZkNzJkN2VjYzRhZjkxMWM2MjlkMjg0MmYzY2Y4ZjNlYWZjMDdiMzhjZWQ3NWFiMTJiIn0.eyJhdWQiOiJlYTZlZGYxODg0MjhmNmExZjJlMzRmMTk1OTMyM2M2MSIsImp0aSI6IjYzOWFlZTIyYmU0MTc1NmFiMTBmYjEzN2JkZTIwYmZkNzJkN2VjYzRhZjkxMWM2MjlkMjg0MmYzY2Y4ZjNlYWZjMDdiMzhjZWQ3NWFiMTJiIiwiaWF0IjoxNjEyMjM1NDExLCJuYmYiOjE2MTIyMzU0MTEsImV4cCI6MTYxMjIzOTAxMSwic3ViIjoiMTY0ODM3OjMwMDI0MyIsInNjb3BlcyI6WyJjb21wYW5pZXMiLCJjb250YWN0cyIsImRlYWxzIiwiZGVwYXJ0bWVudHMiLCJldmVudHMiLCJpbnZvaWNlcyIsInByb2R1Y3RzIiwicHJvamVjdHMiLCJxdW90YXRpb25zIiwic3Vic2NyaXB0aW9ucyIsInRpY2tldHMiLCJ0b2RvcyIsInVzZXJzIl0sInBlcm1pc3Npb25zIjpbImFkbWluIiwiYWx0ZXJuYXRpdmVfb3V0Z29pbmdfZW1haWxfYWRkcmVzc2VzIiwiYmlsbGluZyIsImNhbGVuZGFyIiwiY29tcGFuaWVzIiwiY29tcGFueV9lbnRpdHlfZW1haWxzIiwiY29udGFjdHMiLCJjcmVkaXRfbm90ZXMiLCJkYXNoYm9hcmQiLCJkZWFscyIsImRlbGl2ZXJ5X25vdGVzIiwiaW5zaWdodHMiLCJpbnZvaWNlcyIsIm1haWxpbmciLCJvcmRlcl9jb25maXJtYXRpb25zIiwib3JkZXJzIiwicHJvZHVjdF9wdXJjaGFzZV9wcmljZSIsInByb2R1Y3RzIiwicHJvamVjdF9wbGFubmluZyIsInByb2plY3RzIiwicmVzb3VyY2VfcGxhbm5pbmciLCJzZXR0aW5ncyIsInN1YnNjcmlwdGlvbnMiLCJ0YXJnZXRzIiwidGlja2V0cyIsInRpbWVfdHJhY2tpbmciLCJ0b2RvcyIsInVzZXJzIiwid2ViaG9va3MiLCJ3b3JrX29yZGVycyJdfQ.QSGHIs1NjkMtVgXOd-VkWP0vosMMk5zz7VqG2PQqAYuedRd2LAl7T13G9UMY6LPRGv1zuckQWas8zrmIDhU-tXY4dSuL3MFsrUWBfCYQB_3ZLjlvM-edq8zjfcX2Bkx9erLUg-5ypO7Mt1z9w8PyhrF6HZvxbX7LfFx0bVxYVrU","Content-Type":"application/json"}
+return "";
