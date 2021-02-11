@@ -1,0 +1,135 @@
+listVar = List();
+data = zoho.crm.getRecordById("Quotes",record_id);
+info data;
+Quote_ID = data.getJSON("id");
+currency_symbol = data.getJSON("$currency_symbol");
+if(currency_symbol.containsIgnoreCase("ILS"))
+{
+	currency_code = "ILS";
+	currency_id = "88462000000033369";
+}
+else if(currency_symbol.containsIgnoreCase("usd"))
+{
+	currency_code = "USD";
+	currency_id = "88462000000000059";
+}
+else if(currency_symbol.containsIgnoreCase("EUR"))
+{
+	currency_code = "EUR";
+	currency_id = "88462000000000071";
+}
+info "currency: " + currency_code;
+Account = data.getJSON("Account_Name");
+Account_Name = Account.getJSON("name");
+Product_Details = data.getJSON("Product_Details");
+info Product_Details;
+if(!Account_Name.isNull())
+{
+	AccountID = Account.getJSON("id");
+	account_details = zoho.crm.getRecordById("Accounts",AccountID);
+	info "1234";
+	info account_details;
+	searchCon = Map();
+	searchCon.put("contact_name",Account_Name);
+	search = zoho.books.getRecords("Contacts","20068030184",searchCon,"crm_books");
+	// 	info search;
+	if(!search.isEmpty())
+	{
+		contacts = search.getJSON("contacts");
+		contact_id = contacts.getJSON("contact_id");
+		//update_the contact
+		createCon = Map();
+		createCon.put("contact_name",Account_Name);
+		createCon.put("zcrm_account_id",AccountID);
+		createCon.put("currency_id",currency_id);
+		createCon.put("currency_code",currency_code);
+		update_contact = zoho.books.updateRecord("Contacts","20068030184",contact_id,createCon);
+		info update_contact;
+		info "200";
+	}
+	else
+	{
+		createCon = Map();
+		createCon.put("contact_name",Account_Name);
+		createCon.put("zcrm_account_id",AccountID);
+		createCon.put("currency_id",currency_id);
+		createCon.put("currency_code",currency_code);
+		// 		createCon.put("zcrm_contact_id",)
+		create_contact = zoho.books.createRecord("Contacts","20068030184",createCon);
+		info create_contact;
+		info "500";
+		contact_id = create_contact.getJSON("contact").getJSON("contact_id");
+	}
+}
+for each  product in Product_Details
+{
+	product_name = product.getJSON("product").getJSON("name");
+	books_items = zoho.books.getRecords("items","20068030184");
+	// 		info books_items;
+	zbooks_items = books_items.getJSON("items");
+	for each  itm in zbooks_items
+	{
+		item_name = itm.getJSON("item_name");
+		if(item_name == product_name)
+		{
+			books_item_id = itm.getJSON("item_id");
+		}
+	}
+	quantity = product.getJSON("quantity");
+	Discount = product.getJSON("Discount");
+	Tax = product.getJSON("Tax");
+	// 		list_price = product.getJSON("list_price");
+	list_price = product.getJSON("list_price");
+	// 		quantity_in_stock = product.getJSON("quantity_in_stock");
+	product_description = product.getJSON("product_description");
+	info "product";
+	info product_description;
+	if(books_item_id.isNull())
+	{
+		create_item_mp = Map();
+		create_item_mp.put("name",product_name);
+		create_item_mp.put("rate",list_price);
+		create_item_mp.put("description",product_description);
+		create_item = zoho.books.createRecord("Items","20068030184",create_item_mp);
+		// 		info create_item;
+		item_id = create_item.getJSON("item").getJSON("item_id");
+	}
+	else
+	{
+		item_id = books_item_id;
+	}
+	mapVar = Map();
+	mapVar.put("item_id",item_id);
+	mapVar.put("name",product_name);
+	mapVar.put("rate",list_price);
+	mapVar.put("quantity",quantity);
+	mapVar.put("discount_amount",Discount);
+	listVar.add(mapVar);
+}
+values = Map();
+values.put("customer_id",contact_id);
+values.put("line_items",listVar);
+create_invoice = zoho.books.createRecord("Invoices","20068030184",values,"crm_books");
+info "create_invc";
+info create_invoice;
+invoice_id = create_invoice.getJSON("invoice").getJSON("invoice_id");
+url_link = "https://books.zoho.eu/app#/invoices/" + invoice_id + "?filter_by=Status.All&per_page=25&sort_column=created_time&sort_order=D";
+//update the deal and quote with url
+deal_map = Map();
+deal_map.put("GLOO_Invoice_URL",url_link);
+update_deal = zoho.crm.updateRecord("Deals",record_id,deal_map);
+info update_deal;
+//update quote
+update_quote = zoho.crm.updateRecord("Quotes",Quote_ID,deal_map);
+info update_quote;
+code = create_invoice.getJSON("code");
+msg = create_invoice.getJSON("message");
+// if(code == 0)
+// {
+// 	return "Invoice has been created";
+// }
+// else
+// {
+// 	return "No Account associated!";
+// }
+return msg;
