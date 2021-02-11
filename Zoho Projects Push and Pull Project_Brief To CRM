@@ -1,0 +1,279 @@
+//////////////////////////////////////push//////////////////////////////////////////////////////
+// deal_ID ="271883000001533044";
+res = zoho.crm.getRecordById("Deals",deal_ID);
+// info res;
+project_brief = zoho.crm.getRelatedRecords("Related_Deals1","Deals",deal_ID);
+info project_brief;
+Project_Briefs_ID = project_brief.getJSON("id");
+Link_For_Assets_Folder = project_brief.getJSON("Link_For_Assets_Folder");
+Port = project_brief.getJSON("Port");
+Domain_Email_Use_MX = project_brief.getJSON("Domain_Email_Use_MX");
+Link_for_Login_if_different = project_brief.getJSON("Link_for_Login_if_different");
+Sources_Assets_Folder = project_brief.getJSON("Sources_Assets_Folder");
+User_Name_Registrar_DNS = project_brief.getJSON("User_Name_Registrar_DNS");
+Hosting = project_brief.getJSON("Hosting");
+if(!Hosting.isNull())
+{
+	if(Hosting.containsIgnoreCase("other"))
+	{
+		Hosting = "External";
+	}
+	else
+	{
+		Hosting = Hosting;
+	}
+}
+Password_if_not_upress = project_brief.getJSON("Password_if_not_upress");
+FTP_Address = project_brief.getJSON("FTP_Address");
+Link = project_brief.getJSON("Link");
+Link_to_Old_website = project_brief.getJSON("Link_to_Old_website");
+Has_access_through_Upress = project_brief.getJSON("Has_access_through_Upress");
+if(!Has_access_through_Upress.isNull())
+{
+	if(Has_access_through_Upress.containsIgnoreCase("Yes"))
+	{
+		Has_access_through_Upress = "yes";
+	}
+	else
+	{
+		Has_access_through_Upress = "no";
+	}
+}
+Description = project_brief.getJSON("Description");
+Login_Link = project_brief.getJSON("Login_Link");
+Username_if_not_upress = project_brief.getJSON("Username_if_not_upress");
+attachment_Id = project_brief.getJSON("attachment_Id");
+Storage_Password = project_brief.getJSON("Storage_Password");
+Connection_Type = project_brief.getJSON("Connection_Type");
+Notes = project_brief.getJSON("Notes");
+Password = project_brief.getJSON("Password");
+User_Name = project_brief.getJSON("User_Name");
+Notes_for_credentials = project_brief.getJSON("Notes_for_credentials");
+Storage_Notes = project_brief.getJSON("Storage_Notes");
+Password_Registrar_DNS = project_brief.getJSON("Password_Registrar_DNS");
+Username = project_brief.getJSON("Username");
+Name_Of_Registrar = project_brief.getJSON("Name_Of_Registrar");
+mp = Map();
+project = zoho.crm.getRelatedRecords("Zoho_Projects","Deals",deal_ID,1,200,mp,"crm_all");
+info project;
+project_id = project.getJSON("id");
+// get_custom_fields = invokeurl
+// 		[
+// 		url :"https://projectsapi.zoho.eu/restapi/portal/otwdesign/projects/customfields/"
+// 		type :GET
+// 		connection:"project_all"
+// 		];
+// info get_custom_fields;
+mp = Map();
+mp.put("name","testing manv");
+mp.put("status","active");
+mp.put("UDF_CHAR2",Link_to_Old_website);
+mp.put("UDF_CHAR3",Link_for_Login_if_different);
+mp.put("UDF_CHAR4",Username);
+mp.put("UDF_MULTI1",Has_access_through_Upress);
+mp.put("UDF_CHAR5",Password);
+mp.put("UDF_CHAR7",Hosting);
+mp.put("UDF_CHAR8",Username_if_not_upress);
+mp.put("UDF_MULTI4",Domain_Email_Use_MX);
+mp.put("UDF_CHAR18",Name_Of_Registrar);
+mp.put("UDF_CHAR15",Password_Registrar_DNS);
+mp.put("UDF_CHAR1",Password_if_not_upress);
+mp.put("UDF_TEXT3",Storage_Notes);
+mp.put("UDF_TEXT2",Notes);
+mp.put("UDF_TEXT1",Notes_for_credentials);
+mp.put("UDF_CHAR26",Connection_Type);
+mp.put("UDF_CHAR6",Login_Link);
+mp.put("UDF_CHAR24",FTP_Address);
+mp.put("UDF_CHAR12",Sources_Assets_Folder);
+mp.put("UDF_CHAR25",Port);
+mp.put("UDF_CHAR27",User_Name);
+mp.put("UDF_CHAR28",Storage_Password);
+mp.put("UDF_CHAR12",Sources_Assets_Folder);
+mp.put("UDF_CHAR17",User_Name_Registrar_DNS);
+info mp;
+// curl "https://www.zohoapis.com/crm/v2/Leads/100023009/Attachments/100013547"
+// attachment_Id = "271883000001722064";
+// attachment = invokeurl
+// [
+// 	url :"https://www.zohoapis.eu/crm/v2/Project_Briefs/" + Project_Briefs_ID + "Attachments/" + attachment_Id
+// 	type :GET
+// 	connection:"crm_all"
+// ];
+// info "DFSa";
+// info attachment;
+update_project = invokeurl
+[
+	url :"https://projectsapi.zoho.eu/restapi/portal/otwdesign/projects/" + project_id + "/"
+	type :POST
+	parameters:mp
+	connection:"project_all"
+];
+info update_project;
+return "Data Pushed Successfully";
+
+/////////////////////////////////////////////////////////////////////////////////////////////Pull Data///////////////////////////////////////////////////////////
+
+// deal_ID ="271883000001533044";
+res = zoho.crm.getRecordById("Deals",deal_ID);
+// info res;
+project_brief = zoho.crm.getRelatedRecords("Related_Deals1","Deals",deal_ID);
+// info project_brief;
+Project_Briefs_ID = project_brief.getJSON("id");
+// Link_For_Assets_Folder = project_brief.getJSON("Link_For_Assets_Folder");
+// Port = project_brief.getJSON("Port");
+// Domain_Email_Use_MX = project_brief.getJSON("Domain_Email_Use_MX");
+// Link_for_Login_if_different = project_brief.getJSON("Link_for_Login_if_different");
+// Sources_Assets_Folder = project_brief.getJSON("Sources_Assets_Folder");
+// User_Name_Registrar_DNS = project_brief.getJSON("User_Name_Registrar_DNS");
+// Hosting = project_brief.getJSON("Hosting");
+// if(Hosting.containsIgnoreCase("other"))
+// {
+// 	Hosting = "External";
+// }
+// else
+// {
+// 	Hosting = Hosting;
+// }
+// Password_if_not_upress = project_brief.getJSON("Password_if_not_upress");
+// FTP_Address = project_brief.getJSON("FTP_Address");
+// Link = project_brief.getJSON("Link");
+// Link_to_Old_website = project_brief.getJSON("Link_to_Old_website");
+// Has_access_through_Upress = project_brief.getJSON("Has_access_through_Upress");
+// if(Has_access_through_Upress.containsIgnoreCase("Yes"))
+// {
+// 	Has_access_through_Upress = "yes";
+// }
+// else
+// {
+// 	Has_access_through_Upress = "no";
+// }
+// Description = project_brief.getJSON("Description");
+// Login_Link = project_brief.getJSON("Login_Link");
+// Username_if_not_upress = project_brief.getJSON("Username_if_not_upress");
+// attachment_Id = project_brief.getJSON("attachment_Id");
+// Storage_Password = project_brief.getJSON("Storage_Password");
+// Connection_Type = project_brief.getJSON("Connection_Type");
+// Notes = project_brief.getJSON("Notes");
+// Password = project_brief.getJSON("Password");
+// User_Name = project_brief.getJSON("User_Name");
+// Notes_for_credentials = project_brief.getJSON("Notes_for_credentials");
+// Storage_Notes = project_brief.getJSON("Storage_Notes");
+// Password_Registrar_DNS = project_brief.getJSON("Password_Registrar_DNS");
+// Username = project_brief.getJSON("Username");
+// Name_Of_Registrar = project_brief.getJSON("Name_Of_Registrar");
+mp = Map();
+project = zoho.crm.getRelatedRecords("Zoho_Projects","Deals",deal_ID,1,200,mp,"crm_all");
+info "dsafa";
+// info project;
+project_id = project.getJSON("id");
+project_details = invokeurl
+[
+	url :"https://projectsapi.zoho.eu/restapi/portal/otwdesign/projects/" + project_id + "/"
+	type :GET
+	connection:"project_all"
+];
+// info project_details;
+custom = invokeurl
+[
+	url :"https://projectsapi.zoho.eu/restapi/portal/otwdesign/projects/customfields/"
+	type :GET
+	connection:"project_all"
+];
+// info custom;
+project_data = project_details.getJSON("projects");
+mp = Map();
+custm_fields = project_data.getJSON("custom_fields");
+// info custm_fields;
+custom_fields = custm_fields.toList(",");
+info custom_fields;
+size = 0;
+final_size = custom_fields.size();
+custom_fields0 = custom_fields.get(0);
+info custom_fields0;
+Password_not_upress = custom_fields0.getJSON("Password (if not upress)");
+custom_fields1 = custom_fields.get(1);
+Link_to_Old_website = custom_fields1.getJSON("Link to the Old website");
+custom_fields2 = custom_fields.get(2);
+Link_for_Login_if_different = custom_fields2.getJSON("Link for Login (if different)");
+custom_fields3 = custom_fields.get(3);
+Username = custom_fields3.getJSON("Username");
+custom_fields4 = custom_fields.get(4);
+access_thru_upress = custom_fields4.getJSON("Has access through upress");
+if(access_thru_upress.containsIgnoreCase("yes"))
+{
+	final_access_thru_upress = "yes";
+}
+else
+{
+	final_access_thru_upress = "no";
+}
+custom_fields5 = custom_fields.get(5);
+additional_password = custom_fields5.getJSON("Password");
+custom_fields6 = custom_fields.get(6);
+Development_Link = custom_fields6.getJSON("Development Link");
+custom_fields7 = custom_fields.get(7);
+Hosting = custom_fields7.getJSON("Hosting");
+custom_fields8 = custom_fields.get(8);
+Username_if_not_upress = custom_fields8.getJSON("Username (if not upress)");
+custom_fields13 = custom_fields.get(13);
+External_Link = custom_fields13.getJSON("External Link");
+custom_fields14 = custom_fields.get(14);
+dns_password = custom_fields14.getJSON("Password");
+custom_fields15 = custom_fields.get(15);
+Domain_Email_Use_MX = custom_fields15.getJSON("Domain Email (Use MX)");
+if(Domain_Email_Use_MX.containsIgnoreCase("yes"))
+{
+	final_domain_mx = "yes";
+}
+else
+{
+	final_domain_mx = "no";
+}
+custom_fields16 = custom_fields.get(16);
+Link = custom_fields16.getJSON("Link");
+custom_fields17 = custom_fields.get(17);
+UserName = custom_fields17.getJSON("UserName");
+custom_fields19 = custom_fields.get(19);
+Name_Of_Registrar = custom_fields19.getJSON("Name Of Registrar");
+custom_fields23 = custom_fields.get(23);
+NOTES = custom_fields23.getJSON("NOTES");
+custom_fields24 = custom_fields.get(24);
+addtion_notes = custom_fields24.getJSON("NOTES");
+custom_fields27 = custom_fields.get(27);
+storage_notes = custom_fields27.getJSON("Notes");
+custom_fields28 = custom_fields.get(28);
+FTP_Address = custom_fields28.getJSON("FTP Address");
+custom_fields29 = custom_fields.get(29);
+Port = custom_fields29.getJSON("Port");
+custom_fields30 = custom_fields.get(30);
+Connection_Type = custom_fields30.getJSON("Connection Type");
+custom_fields31 = custom_fields.get(31);
+User_Name = custom_fields31.getJSON("Username");
+custom_fields32 = custom_fields.get(32);
+store_password = custom_fields32.getJSON("Password");
+// custom_fields30 = custom_fields.get(30);
+mp.put("Link_for_Login_if_different",Link_for_Login_if_different);
+mp.put("Has_access_through_Upress",final_access_thru_upress);
+mp.put("Password_if_not_upress",Password_not_upress);
+mp.put("Link_to_Old_website",Link_to_Old_website);
+mp.put("Password",additional_password);
+mp.put("Development_Link",Development_Link);
+mp.put("Hosting",Hosting);
+mp.put("Username_if_not_upress",Username_if_not_upress);
+mp.put("Password_Registrar_DNS",dns_password);
+mp.put("Domain_Email_Use_MX",final_domain_mx);
+mp.put("Login_Link",Link);
+mp.put("User_Name_Registrar_DNS",UserName);
+mp.put("Name_Of_Registrar",Name_Of_Registrar);
+mp.put("Notes_for_credentials",NOTES);
+mp.put("Notes",addtion_notes);
+mp.put("Storage_Notes",storage_notes);
+mp.put("FTP_Address",FTP_Address);
+mp.put("Port",Port);
+mp.put("Connection_Type",Connection_Type);
+mp.put("User_Name",User_Name);
+mp.put("Storage_Password",store_password);
+info mp;
+update_record = zoho.crm.updateRecord("Project_Briefs",Project_Briefs_ID,mp);
+info update_record;
+return "Data pulled successfully";
