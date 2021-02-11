@@ -1,0 +1,193 @@
+organizationID = "20068064385";
+clientIDs = "1000.XDEYZYH0CJQ1YXIK8RU6LK2AWBWJPI";
+client_secrets = "655232137e889ffbb71c91a855a6024d028569cf50";
+refresh_token_crm_settings_all_scp = "1000.b5baabddd130809e8d0bfba536a9fde5.12da3a11a264d0d4c0ad0bbfc57a25be";
+mp1 = Map();
+mp1.put("client_id",clientIDs);
+mp1.put("client_secret",client_secrets);
+mp1.put("refresh_token",refresh_token_crm_settings_all_scp);
+mp1.put("grant_type","refresh_token");
+response = invokeurl
+[
+	url :"https://accounts.zoho.eu/oauth/v2/token"
+	type :POST
+	parameters:mp1
+];
+accesstkn = response.getJSON("access_token");
+crmvarheader = Map();
+oauth = "Zoho-oauthtoken" + " " + accesstkn;
+crmvarheader.put("Authorization",oauth);
+info crmvarheader;
+listVar = List();
+data = zoho.crm.getRecordById("Quotes",record_id);
+Quote_ID = data.getJSON("id");
+currency_symbol = data.getJSON("$currency_symbol");
+if(currency_symbol.containsIgnoreCase("ILS"))
+{
+	currency_code = "ILS";
+	currency_id = "89443000000032009";
+}
+else if(currency_symbol.containsIgnoreCase("usd"))
+{
+	currency_code = "USD";
+	currency_id = "89443000000000059";
+}
+else if(currency_symbol.containsIgnoreCase("EUR"))
+{
+	currency_code = "EUR";
+	currency_id = "88462000000000071";
+}
+Product_Details = data.getJSON("Product_Details");
+Account = data.getJSON("Account_Name");
+Account_Name = Account.getJSON("name");
+if(!Account_Name.isNull())
+{
+	AccountID = Account.getJSON("id");
+	account_details = zoho.crm.getRecordById("Accounts",AccountID);
+	info "1234";
+	info account_details;
+	contact_email = account_details.getJSON("Email");
+	// 	info contact_email;
+	Full_Name = account_details.getJSON("Account_Name");
+	info Full_Name;
+	info "5";
+}
+contacts_books = invokeurl
+[
+	url :"https://books.zoho.eu/api/v3/contacts?organization_id=" + organizationID
+	type :GET
+	headers:crmvarheader
+];
+info contacts_books;
+Contacts = contacts_books.getJSON("contacts");
+// 	info Contacts;
+for each  con in Contacts
+{
+	contact_name = con.getJSON("contact_name");
+	info contact_name;
+	if(Full_Name == contact_name)
+	{
+		info contact_name;
+		contact_books_id = con.getJSON("contact_id");
+		info contact_books_id;
+	}
+}
+createCon = Map();
+// 	createCon.put("contact_name",Full_Name);
+// 	emails = Map();
+// 	emails.put("email",contact_email);
+// 	contact_person = List();
+// 	contact_person.add(emails);
+createCon.put("contact_name",Account_Name);
+createCon.put("zcrm_account_id",AccountID);
+createCon.put("currency_id",currency_id);
+createCon.put("currency_code",currency_code);
+info createCon;
+if(contact_books_id.isNull())
+{
+	create_contact = invokeurl
+	[
+		url :"https://books.zoho.eu/api/v3/contacts?organization_id=" + organizationID
+		type :POST
+		parameters:createCon.toString()
+		headers:crmvarheader
+	];
+	// 		info "SDfa";
+	info create_contact;
+	contactsID = create_contact.getJSON("contact").getJSON("contact_id");
+}
+else
+{
+	//update the contact
+	contactsID = contact_books_id;
+	update_contact = invokeurl
+	[
+		url :"https://books.zoho.eu/api/v3/contacts/" + contactsID + "?organization_id=" + organizationID
+		type :PUT
+		parameters:createCon.toString()
+		headers:crmvarheader
+	];
+}
+for each  product in Product_Details
+{
+	product_name = product.getJSON("product").getJSON("name");
+	quantity = product.getJSON("quantity");
+	Discount = product.getJSON("Discount");
+	Tax = product.getJSON("Tax");
+	list_price = product.getJSON("list_price");
+	get_items = invokeurl
+	[
+		url :"https://books.zoho.eu/api/v3/items?organization_id=" + organizationID
+		type :GET
+		headers:crmvarheader
+	];
+	// 		info get_items;
+	books_items = get_items.getJSON("items");
+	info books_items;
+	for each  itm in books_items
+	{
+		item_name = itm.getJSON("item_name");
+		if(item_name == product_name)
+		{
+			item_ID = itm.getJSON("item_id");
+		}
+		if(item_ID.isNull())
+		{
+			item_map = Map();
+			item_map.put("name",product_name);
+			item_map.put("rate",list_price);
+			item_map.put("discount",Discount);
+			// 			create_item = invokeurl
+			// 			[
+			// 				url :"https://books.zoho.eu/api/v3/items?organization_id=" + organizationID
+			// 				type :POST
+			// 				parameters:item_map.toString()
+			// 				headers:crmvarheader
+			// 			];
+			// 			info create_item;
+			// 			books_item_ID = create_item.getJSON("item").getJSON("item_id");
+		}
+		else
+		{
+			books_item_ID = item_ID;
+		}
+	}
+	mapVar = Map();
+	mapVar.put("item_id",books_item_ID);
+	mapVar.put("name",product_name);
+	mapVar.put("rate",list_price);
+	mapVar.put("quantity",quantity);
+	mapVar.put("discount_amount",Discount);
+	listVar.add(mapVar);
+}
+values = Map();
+values.put("customer_id",contactsID);
+values.put("line_items",listVar);
+create_invoice = invokeurl
+[
+	url :"https://books.zoho.eu/api/v3/invoices?organization_id=" + organizationID
+	type :POST
+	parameters:values.toString()
+	headers:crmvarheader
+];
+info create_invoice;
+invoice_id = create_invoice.getJSON("invoice").getJSON("invoice_id");
+code = create_invoice.getJSON("code");
+if(code == 0)
+{
+	url_link = "https://books.zoho.eu/app#/invoices/" + invoice_id + "?filter_by=Status.All&per_page=25&sort_column=created_time&sort_order=D";
+	//update the deal and quote with url
+	// 	deal_map = Map();
+	// 	deal_map.put("Books_Invoice_URL",url_link);
+	// 	update_deal = zoho.crm.updateRecord("Deals",record_id,deal_map);
+	// 	info update_deal;
+	//update quote
+	// 	update_quote = zoho.crm.updateRecord("Quotes",Quote_ID,deal_map);
+	// 	info update_quote;
+	// 	return "invoice has been created";
+}
+else
+{
+	return "No Account associated!";
+}
+return "";
