@@ -1,0 +1,204 @@
+////////elizabeth erp-----------------------------------
+organizationID = "20068064385";
+clientIDs = "1000.XDEYZYH0CJQ1YXIK8RU6LK2AWBWJPI";
+client_secrets = "655232137e889ffbb71c91a855a6024d028569cf50";
+refresh_token_crm_settings_all_scp = "1000.b5baabddd130809e8d0bfba536a9fde5.12da3a11a264d0d4c0ad0bbfc57a25be";
+mp1 = Map();
+mp1.put("client_id",clientIDs);
+mp1.put("client_secret",client_secrets);
+mp1.put("refresh_token",refresh_token_crm_settings_all_scp);
+mp1.put("grant_type","refresh_token");
+response = invokeurl
+[
+	url :"https://accounts.zoho.eu/oauth/v2/token"
+	type :POST
+	parameters:mp1
+];
+accesstkn = response.getJSON("access_token");
+crmvarheader = Map();
+oauth = "Zoho-oauthtoken" + " " + accesstkn;
+crmvarheader.put("Authorization",oauth);
+info crmvarheader;
+//---------------------------------------------------------main process-------------------------------------
+AccountID = "271883000002134215";
+account_details = zoho.crm.getRecordById("Accounts",AccountID);
+info account_details;
+currency_symbol = account_details.getJSON("$currency_symbol");
+currency_symbol = "ILS";
+if(currency_symbol.containsIgnoreCase("ILS"))
+{
+	currency_code = "ILS";
+	currency_id = "89443000000032009";
+}
+else if(currency_symbol.containsIgnoreCase("usd"))
+{
+	currency_code = "USD";
+	currency_id = "89443000000000059";
+}
+else if(currency_symbol.containsIgnoreCase("EUR"))
+{
+	currency_code = "EUR";
+	currency_id = "88462000000000071";
+}
+
+Account_Name = account_details.getJSON("Account_Name");
+account_id = account_details.getJSON("id");
+contact_details = zoho.crm.getRelatedRecords("Contacts","Accounts",AccountID);
+contact_id = contact_details.getJSON("id");
+info contact_details;
+cont = Map();
+Vat_Number = contact_details.getJSON("Vat_Number");
+createCon = Map();
+contact_persons = Map();
+if(!Vat_Number.isNull())
+{
+	// 		createCon.put("vat_reg_no",Vat_Number);
+	cf_list = list();
+	cf = Map();
+	cf.put("index",1);
+	cf.put("value",Vat_Number);
+	cf_list.add(cf);
+	createCon.put("custom_fields",cf_list);
+}
+Website = contact_details.getJSON("Website");
+if(!Website.isNull())
+{
+	createCon.put("website",Website);
+}
+Phone = contact_details.getJSON("Phone");
+if(!Phone.isNull())
+{
+	contact_persons.put("phone",Phone);
+}
+skype = contact_details.getJSON("Skype_ID");
+if(!skype.isNull())
+{
+	contact_persons.put("skype",skype);
+}
+billing_adres = Map();
+Mailing_Street = contact_details.getJSON("Mailing_Street");
+if(!Mailing_Street.isNull())
+{
+	billing_adres.put("address",Mailing_Street);
+}
+city = contact_details.getJSON("Mailing_City");
+Mailing_Zip = contact_details.getJSON("Mailing_Zip");
+Mailing_Country = contact_details.getJSON("Mailing_Country");
+Mailing_State = contact_details.getJSON("Mailing_State");
+if(!Mailing_State.isNull())
+{
+	billing_adres.put("state",Mailing_State);
+}
+if(!Mailing_Country.isNull())
+{
+	billing_adres.put("country",Mailing_Country);
+}
+if(!Mailing_Zip.isNull())
+{
+	billing_adres.put("zip",Mailing_Zip);
+}
+if(!city.isNull())
+{
+	billing_adres.put("city",city);
+}
+Fax = contact_details.getJSON("Fax");
+if(!Fax.isNull())
+{
+	billing_adres.put("fax",Fax);
+}
+createCon.put("billing_address",billing_adres);
+//---------------------------shipping address-----------------------------------------------------
+shiping_address = Map();
+Other_Street = contact_details.getJSON("Other_Street");
+if(!Other_Street.isNull())
+{
+	shiping_address.put("address",Other_Street);
+}
+city = contact_details.getJSON("Other_City");
+Other_Zip = contact_details.getJSON("Other_Zip");
+Other_Country = contact_details.getJSON("Other_Country");
+Other_State = contact_details.getJSON("Other_State");
+if(!Other_State.isNull())
+{
+	billing_adres.put("state",Other_State);
+}
+if(!Other_Country.isNull())
+{
+	shiping_address.put("country",Other_Country);
+}
+if(!Other_Zip.isNull())
+{
+	shiping_address.put("zip",Other_Zip);
+}
+if(!city.isNull())
+{
+	shiping_address.put("city",city);
+}
+createCon.put("shipping_address",shiping_address);
+//-------------------------------------------------------------------------						
+email = contact_details.getJSON("Email");
+last_name = contact_details.getJSON("Last_Name");
+First_Name = contact_details.getJSON("First_Name");
+contact_persons.put("email",email);
+contact_persons.put("last_name",last_name);
+contact_persons.put("first_name",First_Name);
+createCon.put("contact_name",Account_Name);
+	createCon.put("currency_id",currency_id);
+	createCon.put("currency_code",currency_code);
+	contact_persons.put("contact_id",contact_id);
+	contact_persons.put("zcrm_account_id",account_id);
+
+contact_person_list = List();
+contact_person_list.add(contact_persons);
+createCon.put("company_name",Account_Name);
+createCon.put("email",email);
+createCon.put("contact_persons",contact_person_list);
+info createCon;
+// contact_name = "Asael Drayer LTD";
+maps = Map();
+maps.put("contact_name",Account_Name);
+contacts_books = invokeurl
+[
+	url :"https://books.zoho.eu/api/v3/contacts?organization_id=" + organizationID
+	type :GET
+	parameters:maps
+	connection:"elizabeth_books"
+];
+info contacts_books;
+Contacts = contacts_books.getJSON("contacts");
+if(!Contacts.isEmpty())
+{
+	contact_name = Contacts.getJSON("contact_name");
+
+			contact_books_id = Contacts.getJSON("contact_id");
+			info "books id";
+			info contact_books_id;
+// -------------------------------contact creation updation process---------------------------------------			
+if (!contact_books_id.isNull())
+			{
+					udpate_contacts = invokeurl
+[
+	url :"https://books.zoho.eu/api/v3/contacts/"+contact_books_id+"?organization_id=" + organizationID
+	type :POST
+	parameters:createCon.toString()
+	connection:"elizabeth_books"
+];
+info udpate_contacts;
+msg = "Client has been updated successfully in Elizabeth Books Account";
+			}
+			}	
+			else 
+			{
+				//-------------create the contact
+				create_contacts = invokeurl
+[
+	url :"https://books.zoho.eu/api/v3/contacts?organization_id=" + organizationID
+	type :POST
+	parameters:createCon.toString()
+	connection:"elizabeth_books"
+];
+info create_contacts;
+				msg = "Client has been created successfully in Elizabeth Books Account";
+			}
+		
+		return msg;
