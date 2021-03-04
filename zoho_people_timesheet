@@ -1,0 +1,107 @@
+// //tokens for zoho people
+payroll_test_ID = "25510000000363473";
+clientIDs = "1000.XDEYZYH0CJQ1YXIK8RU6LK2AWBWJPI";
+client_secrets = "655232137e889ffbb71c91a855a6024d028569cf50";
+// --------------------------omri refresh token
+refresh_token_crm_settings_all_scp = "1000.f3547a12b512458885bc54d82e48df04.3d47f9e4739fcd6a485cd2f799745a51";
+//---------------------------liav refresh token-----------------\
+refresh_token_crm_settings_all_scp = "1000.8ebe2a6bd02e019ccc7c4986d0ec8f3f.c9141fd995ef3646fcc391db58636c9c";
+mp1 = Map();
+mp1.put("client_id",clientIDs);
+mp1.put("client_secret",client_secrets);
+mp1.put("refresh_token",refresh_token_crm_settings_all_scp);
+mp1.put("grant_type","refresh_token");
+response = invokeurl
+[
+	url :"https://accounts.zoho.eu/oauth/v2/token"
+	type :POST
+	parameters:mp1
+];
+accesstkn = response.getJSON("access_token");
+crmvarheader = Map();
+oauth = "Zoho-oauthtoken" + " " + accesstkn;
+crmvarheader.put("Authorization",oauth);
+// crmvarheader.put("Content-Type","form-data");
+info crmvarheader;
+res = zoho.people.getRecordByID("Payroll_testing",payroll_test_ID);
+// info res;
+Email = res.getJSON("Email");
+Employee = res.getJSON("Employee");
+Total_Amount_With_Bonus = res.getJSON("Total_Amount_With_Bonus");
+Total_Hours = res.getJSON("Total_Hours");
+BIC_Swift = res.getJSON("BIC_Swift");
+Employee = res.getJSON("Employee");
+Timelog_To = res.getJSON("Timelog_To");
+Account_Holder_Name = res.getJSON("Account_Holder_Name");
+Bonus = res.getJSON("Bonus");
+Amount = res.getJSON("Amount");
+Timelog_From = res.getJSON("Timelog_From");
+IBAN_Account_No = res.getJSON("IBAN_Account_No");
+service_name = "zoho_sign";
+li = List();
+sign_data = Map();
+sign_data.put("recipient_1",Email);
+sign_data.put("action_type","sign");
+li.add(sign_data);
+mp = Map();
+mp.put("service_name","zohosign");
+filename = "Timesheet of" + Employee;
+mp.put("filename",filename);
+mp.put("signer_data",li);
+//--------------------------------------merge data--------------------------------
+maps = Map();
+maps.put("output_format","pdf");
+merge_Data = Map();
+merge_Data.put("employee_name",Employee);
+merge_Data.put("Total_Amount_With_Bonus",Total_Amount_With_Bonus);
+merge_Data.put("From",Timelog_From);
+merge_Data.put("Timelog_To",Timelog_To);
+merge_Data.put("Total_Hours",Total_Hours);
+merge_Data.put("Account_Holder_Name",Account_Holder_Name);
+merge_Data.put("Bonus",Bonus);
+//merge_Data.put("Total_Amount_",Amount);
+merge_Data.put("BIC_SWIFT",BIC_Swift);
+merge_Data.put("IBAN_Account_No",IBAN_Account_No);
+merge_list = List();
+merge_list.add(merge_Data);
+data = Map();
+data.put("data",merge_list);
+final_data = data.toString();
+mp.put("merge_data",final_data);
+info "map";
+info mp;
+map_dat = mp.toString();
+//----------------------docID omri
+docID = "5gg4wdbfb68aaf5b94b098fa0da6fc106d270";
+//-----------------------------doc_id liav
+docID = "5973ab91426264f534ae1b56c08c95a53c85f";
+// merge_and_sign = invokeurl
+// [
+// url :"https://zohoapis.eu/writer/api/v1/documents/" + docID + "/merge/sign"
+// type :POST
+// parameters:mp
+// headers:crmvarheader
+// ];
+// info merge_and_sign;
+//-----------------------------------just for testing-----------------------------------------------------
+doc_details = invokeurl
+[
+	url :"https://zohoapis.eu/writer/api/v1/documents/" + docID
+	type :GET
+	headers:crmvarheader
+];
+info "Fdsafda";
+info doc_details;
+get_fields = invokeurl
+[
+	url :"https://zohoapis.eu/writer/api/v1/documents/" + docID + "/fields"
+	type :GET
+	headers:crmvarheader
+];
+info get_fields;
+refresh_tkn = invokeurl
+[
+	url :"https://accounts.zoho.eu/oauth/v2/token?response_type=code&client_id=1000.XDEYZYH0CJQ1YXIK8RU6LK2AWBWJPI&client_secret=655232137e889ffbb71c91a855a6024d028569cf50&redirect_uri=https://developers.google.com/oauthplayground/&grant_type=authorization_code&access_type=offline&code=1000.f3c40bba8d79ea7df22afb772c4190d7.49737fca1198ad4cfcad52f3aaeffedc"
+	type :POST
+];
+info refresh_tkn;
