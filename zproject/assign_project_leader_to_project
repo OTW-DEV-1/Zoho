@@ -1,0 +1,114 @@
+void project_automation_when_project_is_created(int ZProject_id)
+{
+clientIDs = "1000.XDEYZYH0CJQ1YXIK8RU6LK2AWBWJPI";
+client_secrets = "655232137e889ffbb71c91a855a6024d028569cf50";
+// --------------------------omri refresh token
+refresh_token_crm_settings_all_scp = "1000.f3547a12b512458885bc54d82e48df04.3d47f9e4739fcd6a485cd2f799745a51";
+//---------------------------liav refresh token-----------------\
+refresh_token_crm_settings_all_scp = "1000.8ebe2a6bd02e019ccc7c4986d0ec8f3f.c9141fd995ef3646fcc391db58636c9c";
+// -------------refreshtoken_manav_all scopes for apps--------------------------------------------------
+refresh_token_crm_settings_all_scp = "1000.81bf801703a0f92e5cabedd1a77d9c03.ffa7b0d5f033310838641798fff74f34";
+mp1 = Map();
+mp1.put("client_id",clientIDs);
+mp1.put("client_secret",client_secrets);
+mp1.put("refresh_token",refresh_token_crm_settings_all_scp);
+mp1.put("grant_type","refresh_token");
+response = invokeurl
+[
+	url :"https://accounts.zoho.eu/oauth/v2/token"
+	type :POST
+	parameters:mp1
+];
+accesstkn = response.getJSON("access_token");
+crmvarheader = Map();
+oauth = "Zoho-oauthtoken" + " " + accesstkn;
+crmvarheader.put("Authorization",oauth);
+// crmvarheader.put("Content-Type","form-data");
+info crmvarheader;
+sendmail
+[
+	from :zoho.adminuserid
+	to :"manavdev000@gmail.com"
+	subject :"zproject"
+	message :ZProject_id
+]
+deals = zoho.crm.getRecords("Deals");
+count = 0;
+for each  record in deals
+{
+	deal_id = record.getJSON("id");
+	mp = Map();
+	project = zoho.crm.getRelatedRecords("Zoho_Projects","Deals",deal_id,1,200,mp,"crm_all");
+	// 		info project;
+	for each  pro in project
+	{
+		project_id = pro.getJSON("id");
+		// 		info "project id";
+		// 		info project_id;
+		if(project_id == ZProject_id)
+		{
+			main_deal_id = record.getJSON("id");
+		}
+	}
+}
+deal_details = zoho.crm.getRecordById("Deals",main_deal_id);
+// 	info deal_details;
+project_leader = deal_details.getJSON("Project_Leader_1");
+if(!project_leader.isNull())
+{
+	projectLeader_Name = project_leader.getJSON("name");
+}
+// 	//-----------------------------get the project users
+Users = invokeurl
+[
+	url :"https://projectsapi.zoho.eu/restapi/portal/otwdesign/users/"
+	type :GET
+	headers:crmvarheader
+];
+// info Users;
+user_details = Users.getJSON("users");
+for each  usr in user_details
+{
+	usr_name = usr.getJSON("name");
+	usr_email = usr.getJSON("email");
+	user_role = usr.getJSON("role");
+	if(user_role != "client")
+	{
+		if(usr_name.containsIgnoreCase(projectLeader_Name) || usr_email.containsIgnoreCase(projectLeader_Name))
+		{
+			UserID = usr.getJSON("id").toLong();
+		}
+	}
+}
+info "userid " + UserID;
+//------------------------------------------------
+project_details = zoho.projects.getRecords("otwdesign",ZProject_id,"tasks");
+project_details = project_details.getJSON("tasks");
+info "tasks";
+// 			info project_details;
+for each  project_detail in project_details
+{
+	details = project_detail.getJSON("details");
+	task_id = project_detail.getJSON("id");
+	owner_name = project_detail.getJSON("owners");
+	// 				info task_id;
+	// 				
+	up = Map();
+	up.put("person_responsible",UserID);
+	update_task = invokeurl
+	[
+		url :"https://projectsapi.zoho.eu/restapi/portal/otwdesign/projects/" + ZProject_id + "/tasks/" + task_id + "/"
+		type :POST
+		parameters:up
+		headers:crmvarheader
+	];
+	info update_task;
+}
+sendmail
+[
+	from :zoho.adminuserid
+	to :"manavdev000@gmail.com"
+	subject :"zproject"
+	message :update_task
+]
+}
